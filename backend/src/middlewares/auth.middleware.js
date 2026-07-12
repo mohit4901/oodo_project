@@ -26,18 +26,21 @@ export const authenticate = catchAsync(async (req, res, next) => {
     // Find active user profile
     const currentUser = await authService.findUserById(decoded.id);
     if (!currentUser) {
-      throw new UnauthorizedError('The user belonging to this token no longer exists.');
+      return next(new UnauthorizedError('The user belonging to this token no longer exists in the database.'));
     }
 
     if (!currentUser.isActive) {
-      throw new UnauthorizedError('This account has been deactivated.');
+      return next(new UnauthorizedError('This account has been deactivated.'));
     }
 
     // Attach user information to request object
     req.user = currentUser;
     next();
   } catch (error) {
-    throw new UnauthorizedError('Invalid or expired authentication token. Please login again.');
+    if (error instanceof UnauthorizedError) {
+      return next(error);
+    }
+    return next(new UnauthorizedError('Invalid or expired authentication token. Please login again.'));
   }
 });
 export default authenticate;
