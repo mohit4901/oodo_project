@@ -47,6 +47,11 @@ api.interceptors.response.use(
       }
     }
     
+    // Extract custom backend message to override generic Axios error messages
+    if (error.response?.data?.message) {
+      error.message = error.response.data.message;
+    }
+    
     return Promise.reject(error);
   }
 );
