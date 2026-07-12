@@ -1,196 +1,204 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as zod from 'zod';
 import { useSettingsRoles, useUpdatePermissions } from '../hooks/useSettings.js';
 import { useAuth } from '../../../context/AuthContext.jsx';
-import Card from '../../../components/ui/Card.jsx';
-import Button from '../../../components/ui/Button.jsx';
-import { Shield, Save, AlertTriangle, Info } from 'lucide-react';
+import { Check, Minus } from 'lucide-react';
 
-const PERMISSION_GROUPS = {
-  Vehicles: [
-    { value: 'read_vehicles', label: 'View Vehicle Registry' },
-    { value: 'write_vehicles', label: 'Modify/Register Vehicles' },
-  ],
-  Drivers: [
-    { value: 'read_drivers', label: 'View Driver Profiles' },
-    { value: 'write_drivers', label: 'Modify/Register Drivers' },
-  ],
-  Trips: [
-    { value: 'read_trips', label: 'View Trips Board' },
-    { value: 'write_trips', label: 'Book & Dispatch Trips' },
-  ],
-  Maintenance: [
-    { value: 'read_maintenance', label: 'View Maintenance Logs' },
-    { value: 'write_maintenance', label: 'Log/Close Maintenance Shop Entries' },
-  ],
-  Expenses: [
-    { value: 'read_expenses', label: 'View Fuel/Expense Ledger' },
-    { value: 'write_expenses', label: 'Log Expenses & Fuel Purchases' },
-  ],
-  Reports: [
-    { value: 'read_reports', label: 'View ROI & Analytics Reports' },
-    { value: 'write_reports', label: 'Export Ledger Reports to CSV' },
-  ],
-  Settings: [
-    { value: 'read_settings', label: 'View System Access Roles' },
-    { value: 'write_settings', label: 'Modify Role Access Permissions (RBAC)' },
-  ],
+/* ── RBAC table config (matches mockup columns) ─────────────────── */
+const MODULES = ['Fleet', 'Driver', 'Trips', 'Fuel/Exp', 'Analytics'];
+
+const MODULE_PERMISSION_MAP = {
+  Fleet:     { full: 'write_vehicles',  view: 'read_vehicles'  },
+  Driver:    { full: 'write_drivers',   view: 'read_drivers'   },
+  Trips:     { full: 'write_trips',     view: 'read_trips'     },
+  'Fuel/Exp':{ full: 'write_expenses',  view: 'read_expenses'  },
+  Analytics: { full: 'write_reports',   view: 'read_reports'   },
 };
 
+const ROLE_DISPLAY = {
+  admin:             'Admin',
+  fleet_manager:     'Fleet Manager',
+  dispatcher:        'Dispatcher',
+  safety_officer:    'Safety Officer',
+  financial_analyst: 'Financial Analyst',
+};
+
+/* shows ✓ / View / – depending on permissions array */
+function PermCell({ permissions = [], module }) {
+  const map   = MODULE_PERMISSION_MAP[module];
+  const hasFull = permissions.includes(map.full);
+  const hasView = permissions.includes(map.view);
+
+  if (hasFull) return <span className="text-accent-orange font-bold text-sm">✓</span>;
+  if (hasView) return <span className="text-gray-400 text-[11px] font-semibold">View</span>;
+  return <span className="text-gray-700 text-sm">–</span>;
+}
+
+/* general settings zod schema */
+const generalSchema = zod.object({
+  depotName:    zod.string().min(2, 'Depot name required').trim(),
+  company:      zod.string().min(2, 'Company name required').trim(),
+  distanceUnit: zod.string().nonempty('Select a unit'),
+});
+
+/* ── page ───────────────────────────────────────────────────────── */
 export const SettingsPage = () => {
   const { user } = useAuth();
-  const { data: rolesData, isLoading } = useSettingsRoles();
-  const { mutate: updatePermissions, isPending: isUpdating } = useUpdatePermissions();
-
-  const [selectedRole, setSelectedRole] = useState(null);
-  const [checkedPermissions, setCheckedPermissions] = useState([]);
-
-  const roles = rolesData || [];
-
-  // Set initial selected role when roles fetch completes
-  useEffect(() => {
-    if (roles.length > 0 && !selectedRole) {
-      setSelectedRole(roles[0]);
-      setCheckedPermissions(roles[0].permissions || []);
-    }
-  }, [roles, selectedRole]);
-
-  const handleRoleChange = (role) => {
-    setSelectedRole(role);
-    setCheckedPermissions(role.permissions || []);
-  };
-
-  const handlePermissionToggle = (permissionValue) => {
-    if (user?.role !== 'admin') return; // Read-only for non-admins
-
-    setCheckedPermissions((prev) =>
-      prev.includes(permissionValue)
-        ? prev.filter((p) => p !== permissionValue)
-        : [...prev, permissionValue]
-    );
-  };
-
-  const handleSave = () => {
-    if (!selectedRole) return;
-    updatePermissions({
-      roleName: selectedRole.roleName,
-      permissions: checkedPermissions,
-    });
-  };
+  const { data: roles = [], isLoading } = useSettingsRoles();
+  const { mutate: updatePermissions, isPending: saving } = useUpdatePermissions();
+  const [savedGeneral, setSavedGeneral] = useState(false);
 
   const isAdmin = user?.role === 'admin';
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(generalSchema),
+    defaultValues: {
+      depotName:    'Gandhinagar Depot GJ9',
+      company:      'India (IN)',
+      distanceUnit: 'Kilometers',
+    },
+  });
+
+  const onSaveGeneral = () => {
+    setSavedGeneral(true);
+    setTimeout(() => setSavedGeneral(false), 2000);
+  };
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Page Header */}
+    <div className="flex flex-col gap-5">
+
+      {/* ── Header ── */}
       <div>
-        <h1 className="text-xl font-bold text-white tracking-tight">ROLE ACCESS SETTINGS</h1>
-        <p className="text-xs text-gray-500">Configure dynamic role-based access control (RBAC) permissions</p>
+        <h1 className="text-base font-bold text-white tracking-wide uppercase">Settings &amp; RBAC</h1>
+        <p className="text-[10px] text-gray-500 mt-0.5">General depot configuration and role-based access control</p>
       </div>
 
-      {/* Admin Notice */}
-      {!isAdmin && (
-        <div className="p-3 bg-amber-950/20 text-amber-400 border border-amber-800/40 rounded-sm text-xs flex items-start gap-2">
-          <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-          <div>
-            <span className="font-semibold uppercase tracking-wider block text-[10px]">Read Only Notice</span>
-            <span className="block mt-0.5">Only Administrators can update dynamic role permissions. Showing current settings.</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+
+        {/* ── LEFT: General Settings form ── */}
+        <div className="bg-[#1c1c1c] border border-[#2a2a2a] rounded-sm overflow-hidden">
+          <div className="px-5 py-3 border-b border-[#2a2a2a]">
+            <h2 className="text-xs font-bold text-white uppercase tracking-widest">General</h2>
           </div>
+          <form onSubmit={handleSubmit(onSaveGeneral)} className="flex flex-col gap-4 p-5">
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">Depot Name</label>
+              <input
+                {...register('depotName')}
+                className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange placeholder:text-gray-700"
+                placeholder="Gandhinagar Depot GJ9"
+              />
+              {errors.depotName && <span className="text-[10px] text-red-400">{errors.depotName.message}</span>}
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">Company</label>
+              <input
+                {...register('company')}
+                className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange placeholder:text-gray-700"
+                placeholder="India (IN)"
+              />
+              {errors.company && <span className="text-[10px] text-red-400">{errors.company.message}</span>}
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">Distance Unit</label>
+              <select
+                {...register('distanceUnit')}
+                className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange cursor-pointer"
+              >
+                <option value="Kilometers">Kilometers</option>
+                <option value="Miles">Miles</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className={`w-full py-2.5 text-sm font-bold rounded-sm transition-colors ${
+                savedGeneral
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-accent-orange hover:bg-orange-500 text-white'
+              }`}
+            >
+              {savedGeneral ? '✓ Saved' : 'Save changes'}
+            </button>
+
+            {/* Status flow legend */}
+            <div className="flex flex-col gap-2 mt-2 text-[10px] text-gray-500">
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-400 font-semibold">Available</span>
+                <span className="text-gray-700">─────────────────────────►</span>
+                <span className="text-amber-400 font-semibold">In Shop</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-amber-400 font-semibold">In Shop</span>
+                <span className="text-gray-700">────────────────────────►</span>
+                <span className="text-emerald-400 font-semibold">Available</span>
+              </div>
+              <p className="text-gray-600 italic">Note: In Shop vehicles are removed from the dispatcher pool.</p>
+            </div>
+          </form>
         </div>
-      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
-        {/* Left: Role List Selection */}
-        <Card className="md:col-span-1 p-0 overflow-hidden flex flex-col divide-y divide-border-thin">
-          <div className="p-4 bg-[#171717]">
-            <h2 className="text-xs font-bold text-white uppercase tracking-wider">Access Roles</h2>
+        {/* ── RIGHT: RBAC table ── */}
+        <div className="bg-[#1c1c1c] border border-[#2a2a2a] rounded-sm overflow-hidden">
+          <div className="px-5 py-3 border-b border-[#2a2a2a]">
+            <h2 className="text-xs font-bold text-white uppercase tracking-widest">Role-Based Access (RBAC)</h2>
           </div>
 
-          <div className="flex flex-col divide-y divide-border-thin">
-            {isLoading ? (
-              [...Array(4)].map((_, i) => (
-                <div key={i} className="p-4 bg-[#1a1a1a]/15 animate-pulse h-12" />
-              ))
-            ) : roles.length === 0 ? (
-              <div className="p-4 text-xs text-gray-600">No roles defined.</div>
-            ) : (
-              roles.map((role) => (
-                <button
-                  key={role._id}
-                  onClick={() => handleRoleChange(role)}
-                  className={`p-4 text-left text-xs font-semibold cursor-pointer select-none transition-colors ${
-                    selectedRole?.roleName === role.roleName
-                      ? 'bg-accent-orange/5 text-accent-orange border-l-2 border-accent-orange'
-                      : 'text-gray-400 hover:bg-[#1a1a1a]'
-                  }`}
-                >
-                  {role.roleName.replace('_', ' ').toUpperCase()}
-                </button>
-              ))
-            )}
-          </div>
-        </Card>
-
-        {/* Right: Grouped Permissions Checklist */}
-        <Card className="md:col-span-3 flex flex-col gap-6">
-          {selectedRole ? (
-            <>
-              <div className="flex items-center justify-between border-b border-border-thin pb-4">
-                <div className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-accent-orange" />
-                  <div>
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                      {selectedRole.roleName.replace('_', ' ').toUpperCase()} Permissions
-                    </h3>
-                    <p className="text-[10px] text-gray-500 mt-0.5">Toggle route filters bound to this access role</p>
-                  </div>
-                </div>
-                {isAdmin && (
-                  <Button variant="primary" size="sm" onClick={handleSave} isLoading={isUpdating}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Permissions
-                  </Button>
-                )}
-              </div>
-
-              {/* Checklist groups */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {Object.entries(PERMISSION_GROUPS).map(([group, permissions]) => (
-                  <div key={group} className="flex flex-col gap-3 p-4 bg-[#151515] border border-border-thin rounded-sm">
-                    <h4 className="text-xs font-bold text-white uppercase tracking-wider border-b border-border-thin pb-1.5">
-                      {group}
-                    </h4>
-                    <div className="flex flex-col gap-2">
-                      {permissions.map((perm) => {
-                        const isChecked = checkedPermissions.includes(perm.value);
-                        return (
-                          <label
-                            key={perm.value}
-                            className={`flex items-start gap-2.5 text-xs text-gray-300 py-1 transition-colors select-none ${
-                              isAdmin ? 'cursor-pointer hover:text-white' : 'opacity-70'
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              disabled={!isAdmin}
-                              onChange={() => handlePermissionToggle(perm.value)}
-                              className="mt-0.5 border border-border-thin rounded-sm bg-[#121212] accent-accent-orange"
-                            />
-                            <span>{perm.label}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
+          {isLoading ? (
+            <div className="p-8 text-center text-gray-600 animate-pulse text-xs">Loading roles…</div>
           ) : (
-            <div className="py-20 text-center text-gray-500 text-xs">
-              Select an access role from the registry list to edit permissions.
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-[11px]">
+                <thead>
+                  <tr className="border-b border-[#252525] text-[9px] text-gray-500 uppercase tracking-widest">
+                    <th className="px-5 py-2.5">Role</th>
+                    {MODULES.map((m) => (
+                      <th key={m} className="px-3 py-2.5 text-center">{m}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#222]">
+                  {roles.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-5 py-8 text-center text-gray-600">
+                        No roles found. Contact admin to seed role definitions.
+                      </td>
+                    </tr>
+                  ) : (
+                    roles.map((role) => (
+                      <tr key={role._id} className="hover:bg-[#1f1f1f] transition-colors">
+                        <td className="px-5 py-3 font-semibold text-gray-300">
+                          {ROLE_DISPLAY[role.roleName] ?? role.roleName}
+                        </td>
+                        {MODULES.map((mod) => (
+                          <td key={mod} className="px-3 py-3 text-center">
+                            <PermCell permissions={role.permissions ?? []} module={mod} />
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           )}
-        </Card>
+
+          {!isAdmin && (
+            <div className="px-5 py-3 border-t border-[#2a2a2a] text-[10px] text-gray-600 italic">
+              Only Administrators can modify role permissions.
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );

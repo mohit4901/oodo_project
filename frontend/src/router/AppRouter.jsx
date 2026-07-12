@@ -93,7 +93,7 @@ export const AppRouter = () => {
           <Route 
             path="settings" 
             element={
-              <ProtectedRoute allowedRoles={['admin', 'fleet_manager']}>
+              <ProtectedRoute allowedRoles={['admin', 'fleet_manager', 'dispatcher', 'safety_officer', 'financial_analyst']}>
                 <SettingsPage />
               </ProtectedRoute>
             } 

@@ -321,7 +321,7 @@ export const FuelExpensePage = () => {
                     variant="outline"
                     size="sm"
                     disabled={expensePage === expensesPagination.pages}
-                    onClick={() => setPage((prev) => prev + 1)}
+                    onClick={() => setExpensePage((prev) => prev + 1)}
                     className="py-1 px-3 text-xs"
                   >
                     Next

@@ -9,261 +9,188 @@ import {
   useDeleteDriver,
 } from '../hooks/useDrivers.js';
 import { useAuth } from '../../../context/AuthContext.jsx';
-import Card from '../../../components/ui/Card.jsx';
-import Button from '../../../components/ui/Button.jsx';
-import Input from '../../../components/ui/Input.jsx';
-import Select from '../../../components/ui/Select.jsx';
-import Badge from '../../../components/ui/Badge.jsx';
-import { Plus, Search, Edit2, Trash2, X, AlertTriangle, Calendar } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, AlertTriangle } from 'lucide-react';
 
-// Zod validation schema for Driver
+/* ── driver status badge ─────────────────────────────────────────── */
+const STATUS_STYLES = {
+  Available:  'bg-emerald-700/60 text-emerald-200',
+  'On Trip':  'bg-sky-700/60 text-sky-200',
+  'Off Duty': 'bg-[#333] text-gray-400',
+  Suspended:  'bg-amber-700/60 text-amber-200',
+};
+
+function DriverStatusBadge({ status }) {
+  const cls = STATUS_STYLES[status] ?? 'bg-[#333] text-gray-400';
+  return (
+    <span className={`inline-block px-2.5 py-0.5 rounded-sm text-[10px] font-bold ${cls}`}>
+      {status}
+    </span>
+  );
+}
+
+/* ── safety score colour ──────────────────────────────────────────── */
+function safetyColor(score) {
+  if (score >= 90) return 'text-emerald-400';
+  if (score >= 70) return 'text-amber-400';
+  return 'text-red-400';
+}
+
+/* ── expiry helper ────────────────────────────────────────────────── */
+function expiryLabel(dateStr) {
+  const today  = new Date();
+  const expiry = new Date(dateStr);
+  const days   = Math.ceil((expiry - today) / 86400000);
+  const fmt    = expiry.toLocaleDateString('en-IN', { month: '2-digit', year: 'numeric' });
+  if (days <= 0)  return { text: `${fmt} EXPIRED`, warn: true };
+  if (days <= 60) return { text: `${fmt} EXPIRING`, warn: true };
+  return { text: fmt, warn: false };
+}
+
+/* ── Zod schema ───────────────────────────────────────────────────── */
 const driverSchema = zod.object({
-  name: zod.string().min(2, 'Driver name must be at least 2 characters'),
-  licenseNumber: zod.string().min(5, 'Valid driver license number is required'),
-  licenseExpiryDate: zod.string().nonempty('License expiry date is required'),
-  contactNumber: zod
-    .string()
-    .min(10, 'Valid contact number is required'),
-  safetyScore: zod.coerce
-    .number()
-    .min(0, 'Score cannot be negative')
-    .max(100, 'Score cannot exceed 100'),
+  name:              zod.string().min(2, 'Name required'),
+  licenseNumber:     zod.string().min(5, 'License number required'),
+  licenseCategory:   zod.string().nonempty('Category required'),
+  licenseExpiryDate: zod.string().nonempty('Expiry date required'),
+  contactNumber:     zod.string().min(10, 'Contact required'),
+  safetyScore:       zod.coerce.number().min(0).max(100),
 });
 
+/* ═══════════════════════════════════════════════════════════════════ */
 export const DriverSafetyProfilePage = () => {
-  const { user } = useAuth();
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-
-  // Modals
+  const { user }    = useAuth();
+  const [search, setSearch]        = useState('');
+  const [page, setPage]            = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingDriver, setEditingDriver] = useState(null);
-  const [deletingDriverId, setDeletingDriverId] = useState(null);
+  const [editingDriver, setEditing] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
-  // Queries & Mutations
-  const { data: driversData, isLoading } = useDriversList({
-    page,
-    limit,
-    search,
-  });
-
-  const { mutate: registerDriver, isPending: isCreating } = useCreateDriver();
+  const { data: driversData, isLoading } = useDriversList({ page, limit: 10, search });
+  const { mutate: createDriver, isPending: isCreating } = useCreateDriver();
   const { mutate: updateDriver, isPending: isUpdating } = useUpdateDriver();
   const { mutate: deleteDriver, isPending: isDeleting } = useDeleteDriver();
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: zodResolver(driverSchema),
-    defaultValues: {
-      name: '',
-      licenseNumber: '',
-      licenseExpiryDate: '',
-      contactNumber: '',
-      safetyScore: 90,
-    },
+    defaultValues: { name: '', licenseNumber: '', licenseCategory: 'LMV', licenseExpiryDate: '', contactNumber: '', safetyScore: 95 },
   });
 
-  const handleOpenForm = (driver = null) => {
+  const openForm = (driver = null) => {
+    setEditing(driver);
     if (driver) {
-      setEditingDriver(driver);
-      
-      // Extract YYYY-MM-DD date string
-      const rawDate = new Date(driver.licenseExpiryDate);
-      const formattedDate = rawDate.toISOString().split('T')[0];
-
       reset({
-        name: driver.name,
-        licenseNumber: driver.licenseNumber,
-        licenseExpiryDate: formattedDate,
-        contactNumber: driver.contactNumber,
-        safetyScore: driver.safetyScore,
+        name:              driver.name,
+        licenseNumber:     driver.licenseNumber,
+        licenseCategory:   driver.licenseCategory ?? 'LMV',
+        licenseExpiryDate: new Date(driver.licenseExpiryDate).toISOString().split('T')[0],
+        contactNumber:     driver.contactNumber,
+        safetyScore:       driver.safetyScore,
       });
     } else {
-      setEditingDriver(null);
-      reset({
-        name: '',
-        licenseNumber: '',
-        licenseExpiryDate: '',
-        contactNumber: '',
-        safetyScore: 100,
-      });
+      reset({ name: '', licenseNumber: '', licenseCategory: 'LMV', licenseExpiryDate: '', contactNumber: '', safetyScore: 95 });
     }
     setIsFormOpen(true);
   };
 
   const onSubmit = (data) => {
     if (editingDriver) {
-      updateDriver(
-        { id: editingDriver._id, data },
-        {
-          onSuccess: () => {
-            setIsFormOpen(false);
-            setEditingDriver(null);
-          },
-        }
-      );
+      updateDriver({ id: editingDriver._id, data }, { onSuccess: () => { setIsFormOpen(false); setEditing(null); }});
     } else {
-      registerDriver(data, {
-        onSuccess: () => {
-          setIsFormOpen(false);
-        },
-      });
+      createDriver(data, { onSuccess: () => setIsFormOpen(false) });
     }
   };
 
-  const handleDeleteConfirm = () => {
-    if (deletingDriverId) {
-      deleteDriver(deletingDriverId, {
-        onSuccess: () => {
-          setDeletingDriverId(null);
-        },
-      });
-    }
-  };
-
-  // Helper checking for license compliance
-  const getLicenseExpiryStatus = (expiryDate) => {
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    const timeDiff = expiry.getTime() - today.getTime();
-    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-    if (daysDiff <= 0) {
-      return { label: 'EXPIRED', color: 'bg-rose-950/40 text-rose-400 border-rose-800/60' };
-    }
-    if (daysDiff <= 30) {
-      return { label: `EXPIRING SOON (${daysDiff}d)`, color: 'bg-amber-950/40 text-amber-400 border-amber-800/60' };
-    }
-    return null;
-  };
-
-  // Helper rating safety levels
-  const getSafetyScoreBadgeColor = (score) => {
-    if (score >= 90) return 'bg-emerald-950/40 text-emerald-400 border-emerald-800/60';
-    if (score >= 70) return 'bg-amber-950/40 text-amber-400 border-amber-800/60';
-    return 'bg-rose-950/40 text-rose-400 border-rose-800/60';
-  };
-
-  const isWriteAllowed = ['admin', 'safety_officer'].includes(user?.role);
-  const drivers = driversData?.data || [];
-  const pagination = driversData?.pagination || { page: 1, pages: 1, total: 0 };
+  const isWriteAllowed = ['admin', 'safety_officer', 'fleet_manager'].includes(user?.role);
+  const drivers    = driversData?.data       ?? [];
+  const pagination = driversData?.pagination ?? { page: 1, pages: 1, total: 0 };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Page Header */}
+    <div className="flex flex-col gap-5">
+
+      {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white tracking-tight">DRIVER & SAFETY PROFILES</h1>
-          <p className="text-xs text-gray-500">Monitor driver license compliances and safety scorings</p>
+          <h1 className="text-base font-bold text-white tracking-wide uppercase">Drivers &amp; Safety Profiles</h1>
+          <p className="text-[10px] text-gray-500 mt-0.5">Monitor license compliance and driver safety ratings</p>
         </div>
         {isWriteAllowed && (
-          <Button variant="primary" size="sm" onClick={() => handleOpenForm()}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Driver
-          </Button>
+          <button
+            onClick={() => openForm()}
+            className="flex items-center gap-2 px-3 py-1.5 bg-accent-orange hover:bg-orange-500 text-white text-xs font-bold rounded-sm transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            + Add Driver
+          </button>
         )}
       </div>
 
-      {/* Filters */}
-      <Card className="flex items-center py-4">
-        <div className="relative flex-1">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
-            <Search className="h-4 w-4" />
-          </span>
-          <input
-            type="text"
-            placeholder="Search by driver name or license number..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="w-full bg-[#121212] border border-border-thin rounded-sm pl-9 pr-4 py-2 text-sm text-gray-300 placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-accent-orange focus:border-accent-orange"
-          />
-        </div>
-      </Card>
+      {/* ── Search bar ── */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500" />
+        <input
+          type="text"
+          placeholder="Search by name or license number…"
+          value={search}
+          onChange={e => { setSearch(e.target.value); setPage(1); }}
+          className="w-full bg-[#1c1c1c] border border-[#2a2a2a] text-gray-300 text-sm pl-9 pr-4 py-2 rounded-sm focus:outline-none focus:border-accent-orange placeholder:text-gray-600"
+        />
+      </div>
 
-      {/* Large Data Table */}
-      <Card className="p-0 overflow-hidden">
+      {/* ── Driver Table ── */}
+      <div className="bg-[#1c1c1c] border border-[#2a2a2a] rounded-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left text-[11px]">
             <thead>
-              <tr className="border-b border-border-thin bg-[#171717] text-gray-400 uppercase tracking-wider">
-                <th className="p-4">Driver Name</th>
-                <th className="p-4">License Number</th>
-                <th className="p-4">License Expiry</th>
-                <th className="p-4">Contact</th>
-                <th className="p-4">Safety Score</th>
-                <th className="p-4">Status</th>
-                {isWriteAllowed && <th className="p-4 text-right">Actions</th>}
+              <tr className="border-b border-[#252525] text-[9px] text-gray-500 uppercase tracking-widest">
+                <th className="px-5 py-2.5">Driver</th>
+                <th className="px-4 py-2.5">License ID</th>
+                <th className="px-4 py-2.5">Category</th>
+                <th className="px-4 py-2.5">Expiry</th>
+                <th className="px-4 py-2.5">Contact</th>
+                <th className="px-4 py-2.5">Safety</th>
+                <th className="px-4 py-2.5">Status</th>
+                {isWriteAllowed && <th className="px-4 py-2.5" />}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border-thin">
+            <tbody className="divide-y divide-[#222]">
               {isLoading ? (
-                [...Array(5)].map((_, idx) => (
-                  <tr key={idx} className="animate-pulse">
-                    <td colSpan={7} className="p-4 bg-[#1a1a1a]/10 h-10" />
-                  </tr>
+                [...Array(5)].map((_, i) => (
+                  <tr key={i}><td colSpan={8} className="p-4 animate-pulse bg-[#1a1a1a] h-10" /></tr>
                 ))
               ) : drivers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-gray-600">
-                    No drivers registered matching query.
+                  <td colSpan={8} className="px-5 py-10 text-center text-gray-600 text-xs">
+                    No drivers registered. Use "+ Add Driver" to create a profile.
                   </td>
                 </tr>
               ) : (
-                drivers.map((driver) => {
-                  const expiryWarn = getLicenseExpiryStatus(driver.licenseExpiryDate);
+                drivers.map(d => {
+                  const exp = expiryLabel(d.licenseExpiryDate);
                   return (
-                    <tr key={driver._id} className="hover:bg-[#1a1a1a] transition-colors">
-                      <td className="p-4 font-semibold text-white">{driver.name}</td>
-                      <td className="p-4 text-gray-400 font-mono">{driver.licenseNumber}</td>
-                      <td className="p-4">
-                        <div className="flex flex-col gap-1 items-start">
-                          <span className="text-gray-300">
-                            {new Date(driver.licenseExpiryDate).toLocaleDateString(undefined, {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                            })}
-                          </span>
-                          {expiryWarn && (
-                            <span className={`px-1.5 py-0.5 rounded-sm text-[8px] font-bold border ${expiryWarn.color}`}>
-                              {expiryWarn.label}
-                            </span>
-                          )}
-                        </div>
+                    <tr key={d._id} className="hover:bg-[#1f1f1f] transition-colors">
+                      <td className="px-5 py-3 font-semibold text-white">{d.name}</td>
+                      <td className="px-4 py-3 font-mono text-gray-400">{d.licenseNumber}</td>
+                      <td className="px-4 py-3 text-gray-400">{d.licenseCategory ?? 'LMV'}</td>
+                      <td className={`px-4 py-3 ${exp.warn ? 'text-red-400 font-semibold' : 'text-gray-400'}`}>
+                        {exp.text}
                       </td>
-                      <td className="p-4 text-gray-400">{driver.contactNumber}</td>
-                      <td className="p-4">
-                        <span className={`px-2 py-0.5 rounded-sm border text-[11px] font-bold ${getSafetyScoreBadgeColor(driver.safetyScore)}`}>
-                          {driver.safetyScore} / 100
-                        </span>
+                      <td className="px-4 py-3 text-gray-400 font-mono">{d.contactNumber}</td>
+                      <td className={`px-4 py-3 font-bold ${safetyColor(d.safetyScore)}`}>
+                        {d.safetyScore}%
                       </td>
-                      <td className="p-4">
-                        <Badge status={driver.status} />
+                      <td className="px-4 py-3">
+                        <DriverStatusBadge status={d.status} />
                       </td>
                       {isWriteAllowed && (
-                        <td className="p-4 text-right">
-                          <div className="inline-flex gap-2">
-                            <button
-                              onClick={() => handleOpenForm(driver)}
-                              className="p-1 hover:bg-[#2a2a2a] text-gray-400 hover:text-white rounded-sm transition-colors cursor-pointer"
-                              title="Edit Driver Profile"
-                            >
-                              <Edit2 className="h-3.5 w-3.5" />
+                        <td className="px-4 py-3">
+                          <div className="flex gap-1.5">
+                            <button onClick={() => openForm(d)}
+                              className="p-1.5 hover:bg-[#2a2a2a] text-gray-500 hover:text-white rounded-sm transition-colors cursor-pointer">
+                              <Edit2 className="h-3 w-3" />
                             </button>
-                            <button
-                              onClick={() => setDeletingDriverId(driver._id)}
-                              className="p-1 hover:bg-red-950/20 text-gray-400 hover:text-red-400 rounded-sm transition-colors cursor-pointer"
-                              title="Delete Driver"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
+                            <button onClick={() => setDeletingId(d._id)}
+                              className="p-1.5 hover:bg-red-950/30 text-gray-500 hover:text-red-400 rounded-sm transition-colors cursor-pointer">
+                              <Trash2 className="h-3 w-3" />
                             </button>
                           </div>
                         </td>
@@ -276,157 +203,132 @@ export const DriverSafetyProfilePage = () => {
           </table>
         </div>
 
-        {/* Pagination Panel */}
-        {pagination.pages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t border-border-thin bg-[#171717]">
-            <span className="text-[11px] text-gray-500">
-              Showing page {pagination.page} of {pagination.pages} ({pagination.total} total drivers)
+        {/* Status toggle legend */}
+        <div className="px-5 py-3 border-t border-[#2a2a2a] flex items-center gap-3 flex-wrap">
+          <span className="text-[9px] text-gray-600 uppercase tracking-widest mr-1">Toggle Status:</span>
+          {['Available', 'On Trip', 'Off Duty', 'Suspended'].map(s => (
+            <span key={s} className={`inline-block px-3 py-1 rounded-sm text-[10px] font-bold cursor-default ${STATUS_STYLES[s] ?? 'bg-[#333] text-gray-400'}`}>
+              {s}
             </span>
+          ))}
+        </div>
+        <div className="px-5 py-2 border-t border-[#2a2a2a] text-[9px] text-amber-700 italic">
+          Rule: Expired license or Suspended status → blocked from trip assignment
+        </div>
+
+        {/* Pagination */}
+        {pagination.pages > 1 && (
+          <div className="flex items-center justify-between px-5 py-2.5 border-t border-[#2a2a2a] text-[10px] text-gray-500">
+            <span>Showing page {pagination.page} / {pagination.pages} ({pagination.total} drivers)</span>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === 1}
-                onClick={() => setPage((prev) => prev - 1)}
-                className="py-1 px-3 text-xs"
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === pagination.pages}
-                onClick={() => setPage((prev) => prev + 1)}
-                className="py-1 px-3 text-xs"
-              >
-                Next
-              </Button>
+              <button onClick={() => setPage(p => p - 1)} disabled={page === 1}
+                className="px-2 py-1 border border-[#333] rounded-sm hover:bg-[#252525] disabled:opacity-30 text-gray-400">‹</button>
+              <button onClick={() => setPage(p => p + 1)} disabled={page === pagination.pages}
+                className="px-2 py-1 border border-[#333] rounded-sm hover:bg-[#252525] disabled:opacity-30 text-gray-400">›</button>
             </div>
           </div>
         )}
-      </Card>
+      </div>
 
-      {/* CRUD Form Modal */}
+      {/* ── Add/Edit Driver Modal ── */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 bg-[#000]/60 flex items-center justify-center p-4">
-          <Card className="w-full max-w-lg relative border-border-thin p-6 flex flex-col gap-5">
-            <button
-              onClick={() => setIsFormOpen(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div>
-              <h3 className="text-base font-bold text-white uppercase tracking-wider">
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-[#1c1c1c] border border-[#2a2a2a] rounded-sm w-full max-w-lg p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-white uppercase">
                 {editingDriver ? 'Edit Driver Profile' : 'Register New Driver'}
               </h3>
-              <p className="text-[11px] text-gray-500">Assign legal credentials and performance details</p>
+              <button onClick={() => { setIsFormOpen(false); setEditing(null); }} className="text-gray-500 hover:text-white cursor-pointer">
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-              <Input
-                label="Full Name"
-                placeholder="Rajesh Yadav"
-                error={errors.name?.message}
-                disabled={isCreating || isUpdating}
-                {...register('name')}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Driving License Number"
-                  placeholder="DL1420210087612"
-                  error={errors.licenseNumber?.message}
-                  disabled={isCreating || isUpdating}
-                  {...register('licenseNumber')}
-                />
-
-                <Input
-                  label="License Expiry Date"
-                  type="date"
-                  error={errors.licenseExpiryDate?.message}
-                  disabled={isCreating || isUpdating}
-                  {...register('licenseExpiryDate')}
-                />
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] text-gray-500 uppercase tracking-widest">Full Name</label>
+                <input {...register('name')} placeholder="Rajesh Yadav"
+                  className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange" />
+                {errors.name && <span className="text-[10px] text-red-400">{errors.name.message}</span>}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Contact Phone"
-                  placeholder="+919876543210"
-                  error={errors.contactNumber?.message}
-                  disabled={isCreating || isUpdating}
-                  {...register('contactNumber')}
-                />
-
-                <Input
-                  label="Safety Score (0 - 100)"
-                  type="number"
-                  placeholder="95"
-                  error={errors.safetyScore?.message}
-                  disabled={isCreating || isUpdating}
-                  {...register('safetyScore')}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] text-gray-500 uppercase tracking-widest">License Number</label>
+                  <input {...register('licenseNumber')} placeholder="DL-8F7215"
+                    className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange" />
+                  {errors.licenseNumber && <span className="text-[10px] text-red-400">{errors.licenseNumber.message}</span>}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] text-gray-500 uppercase tracking-widest">Category</label>
+                  <select {...register('licenseCategory')}
+                    className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange cursor-pointer">
+                    <option value="LMV">LMV</option>
+                    <option value="HMV">HMV</option>
+                    <option value="HPMV">HPMV</option>
+                    <option value="MGV">MGV</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="flex justify-end gap-3 mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsFormOpen(false)}
-                  disabled={isCreating || isUpdating}
-                >
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] text-gray-500 uppercase tracking-widest">Expiry Date</label>
+                  <input {...register('licenseExpiryDate')} type="date"
+                    className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange" />
+                  {errors.licenseExpiryDate && <span className="text-[10px] text-red-400">{errors.licenseExpiryDate.message}</span>}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] text-gray-500 uppercase tracking-widest">Contact</label>
+                  <input {...register('contactNumber')} placeholder="9876543210"
+                    className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange" />
+                  {errors.contactNumber && <span className="text-[10px] text-red-400">{errors.contactNumber.message}</span>}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] text-gray-500 uppercase tracking-widest">Safety Score (0–100)</label>
+                <input {...register('safetyScore')} type="number" min="0" max="100" placeholder="95"
+                  className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange" />
+                {errors.safetyScore && <span className="text-[10px] text-red-400">{errors.safetyScore.message}</span>}
+              </div>
+
+              <div className="flex gap-3 justify-end mt-2">
+                <button type="button" onClick={() => { setIsFormOpen(false); setEditing(null); }}
+                  className="px-4 py-2 text-xs text-gray-400 border border-[#333] rounded-sm hover:bg-[#252525]">
                   Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="sm"
-                  isLoading={isCreating || isUpdating}
-                >
-                  {editingDriver ? 'Update Profile' : 'Register Driver'}
-                </Button>
+                </button>
+                <button type="submit" disabled={isCreating || isUpdating}
+                  className="px-4 py-2 text-xs font-bold bg-accent-orange hover:bg-orange-500 text-white rounded-sm disabled:opacity-50">
+                  {(isCreating || isUpdating) ? 'Saving…' : editingDriver ? 'Update Profile' : 'Register Driver'}
+                </button>
               </div>
             </form>
-          </Card>
+          </div>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deletingDriverId && (
-        <div className="fixed inset-0 z-50 bg-[#000]/60 flex items-center justify-center p-4">
-          <Card className="w-full max-w-sm relative border-red-950 p-6 flex flex-col gap-4 text-center">
-            <div className="mx-auto p-3 bg-red-950/20 text-red-500 rounded-full border border-red-800/30 w-fit">
-              <AlertTriangle className="h-6 w-6" />
+      {/* ── Delete confirmation ── */}
+      {deletingId && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-[#1c1c1c] border border-[#2a2a2a] rounded-sm w-full max-w-sm p-6 flex flex-col gap-4 text-center">
+            <div className="mx-auto p-3 bg-red-950/20 rounded-full border border-red-800/30">
+              <AlertTriangle className="h-6 w-6 text-red-400 mx-auto" />
             </div>
-
             <div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Remove Driver Profile?</h3>
-              <p className="text-[11px] text-gray-500 mt-1">
-                This action soft-deletes the driver registry profile. Past dispatches and analytics will be preserved.
-              </p>
+              <h3 className="text-sm font-bold text-white uppercase">Remove Driver?</h3>
+              <p className="text-[11px] text-gray-500 mt-1">This soft-deletes the profile. Past trips and analytics are preserved.</p>
             </div>
-
-            <div className="flex justify-center gap-3 mt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDeletingDriverId(null)}
-                disabled={isDeleting}
-              >
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setDeletingId(null)} disabled={isDeleting}
+                className="px-4 py-2 text-xs text-gray-400 border border-[#333] rounded-sm hover:bg-[#252525]">
                 Cancel
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleDeleteConfirm}
-                isLoading={isDeleting}
-              >
-                Yes, Delete
-              </Button>
+              </button>
+              <button onClick={() => deleteDriver(deletingId, { onSuccess: () => setDeletingId(null) })} disabled={isDeleting}
+                className="px-4 py-2 text-xs font-bold bg-red-700 hover:bg-red-600 text-white rounded-sm disabled:opacity-50">
+                {isDeleting ? 'Removing…' : 'Yes, Remove'}
+              </button>
             </div>
-          </Card>
+          </div>
         </div>
       )}
     </div>
