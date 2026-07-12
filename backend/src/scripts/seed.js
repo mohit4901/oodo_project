@@ -93,14 +93,14 @@ const seedDatabase = async () => {
     /* ─── 6. MAINTENANCE LOGS ────────────────────────────────────── */
     console.log('🔧 Seeding maintenance logs...');
     await MaintenanceLog.insertMany([
-      { vehicle: vehicles[2]._id, maintenanceType: 'Engine Overhaul',       description: 'Full engine teardown and rebuild after 30k km',          cost: 85000, status: 'Active',   startDate: new Date('2026-07-01') },
-      { vehicle: vehicles[7]._id, maintenanceType: 'Transmission Repair',   description: 'Gearbox replacement — syncromesh damaged',               cost: 42000, status: 'Active',   startDate: new Date('2026-07-05') },
-      { vehicle: vehicles[0]._id, maintenanceType: 'Tyre Replacement',       description: 'All 10 tyres replaced with Apollo Milespeed XL',        cost: 28000, status: 'Closed',   startDate: new Date('2026-06-10'), endDate: new Date('2026-06-11') },
-      { vehicle: vehicles[1]._id, maintenanceType: 'Oil & Filter Change',    description: 'Scheduled 15,000 km service',                           cost: 4500,  status: 'Closed',   startDate: new Date('2026-05-22'), endDate: new Date('2026-05-22') },
-      { vehicle: vehicles[3]._id, maintenanceType: 'Brake Pad Replacement',  description: 'Front and rear brake pads replaced',                    cost: 9200,  status: 'Closed',   startDate: new Date('2026-06-28'), endDate: new Date('2026-06-29') },
-      { vehicle: vehicles[4]._id, maintenanceType: 'AC Compressor Repair',   description: 'Cabin AC not working — compressor replaced',            cost: 18000, status: 'Active',   startDate: new Date('2026-07-08') },
-      { vehicle: vehicles[6]._id, maintenanceType: 'Annual Inspection',      description: 'Govt mandated annual fitness certificate check',         cost: 3000,  status: 'Closed',   startDate: new Date('2026-04-15'), endDate: new Date('2026-04-15') },
-      { vehicle: vehicles[0]._id, maintenanceType: 'Battery Replacement',    description: 'Starter battery dead — replaced with 120Ah unit',       cost: 7500,  status: 'Closed',   startDate: new Date('2026-03-10'), endDate: new Date('2026-03-10') },
+      { vehicle: vehicles[2]._id, maintenanceType: 'Repair',       description: 'Engine Overhaul — Full engine teardown and rebuild after 30k km',          cost: 85000, status: 'Active',   startDate: new Date('2026-07-01') },
+      { vehicle: vehicles[7]._id, maintenanceType: 'Repair',       description: 'Transmission Repair — Gearbox replacement — syncromesh damaged',               cost: 42000, status: 'Active',   startDate: new Date('2026-07-05') },
+      { vehicle: vehicles[0]._id, maintenanceType: 'Repair',       description: 'Tyre Replacement — All 10 tyres replaced with Apollo Milespeed XL',        cost: 28000, status: 'Closed',   startDate: new Date('2026-06-10'), endDate: new Date('2026-06-11') },
+      { vehicle: vehicles[1]._id, maintenanceType: 'Routine',      description: 'Oil & Filter Change — Scheduled 15,000 km service',                           cost: 4500,  status: 'Closed',   startDate: new Date('2026-05-22'), endDate: new Date('2026-05-22') },
+      { vehicle: vehicles[3]._id, maintenanceType: 'Repair',       description: 'Brake Pad Replacement — Front and rear brake pads replaced',                    cost: 9200,  status: 'Closed',   startDate: new Date('2026-06-28'), endDate: new Date('2026-06-29') },
+      { vehicle: vehicles[4]._id, maintenanceType: 'Repair',       description: 'AC Compressor Repair — Cabin AC not working — compressor replaced',            cost: 18000, status: 'Active',   startDate: new Date('2026-07-08') },
+      { vehicle: vehicles[6]._id, maintenanceType: 'Inspection',   description: 'Annual Inspection — Govt mandated annual fitness certificate check',         cost: 3000,  status: 'Closed',   startDate: new Date('2026-04-15'), endDate: new Date('2026-04-15') },
+      { vehicle: vehicles[0]._id, maintenanceType: 'Repair',       description: 'Battery Replacement — Starter battery dead — replaced with 120Ah unit',       cost: 7500,  status: 'Closed',   startDate: new Date('2026-03-10'), endDate: new Date('2026-03-10') },
     ]);
 
     /* ─── 7. FUEL LOGS ───────────────────────────────────────────── */
