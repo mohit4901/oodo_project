@@ -44,6 +44,9 @@ export const VehicleRegistryPage = () => {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [type, setType] = useState('');
+  const [region, setRegion] = useState('');
+  const [sort, setSort] = useState('-createdAt');
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
 
@@ -58,6 +61,9 @@ export const VehicleRegistryPage = () => {
     limit,
     search,
     status,
+    type,
+    region,
+    sort,
   });
 
   const { mutate: registerVehicle, isPending: isCreating } = useCreateVehicle();
@@ -161,38 +167,93 @@ export const VehicleRegistryPage = () => {
       </div>
 
       {/* Search and Filters */}
-      <Card className="flex flex-col sm:flex-row items-center gap-4 py-4">
-        <div className="relative flex-1 w-full">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
-            <Search className="h-4 w-4" />
-          </span>
-          <input
-            type="text"
-            placeholder="Search by registration number, vehicle name..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="w-full bg-[#121212] border border-border-thin rounded-sm pl-9 pr-4 py-2 text-sm text-gray-300 placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-accent-orange focus:border-accent-orange"
-          />
+      <Card className="flex flex-col gap-4 py-4">
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full">
+          <div className="relative flex-1 w-full">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+              <Search className="h-4 w-4" />
+            </span>
+            <input
+              type="text"
+              placeholder="Search by registration number, vehicle name..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="w-full bg-[#121212] border border-border-thin rounded-sm pl-9 pr-4 py-2 text-sm text-gray-300 placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-accent-orange focus:border-accent-orange"
+            />
+          </div>
         </div>
 
-        <Select
-          placeholder="All Statuses"
-          options={[
-            { value: 'Available', label: 'Available' },
-            { value: 'On Trip', label: 'On Trip' },
-            { value: 'In Shop', label: 'In Shop' },
-            { value: 'Retired', label: 'Retired' },
-          ]}
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value);
-            setPage(1);
-          }}
-          className="w-full sm:w-48 bg-[#121212] text-sm"
-        />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
+          <Select
+            placeholder="All Statuses"
+            options={[
+              { value: 'Available', label: 'Available' },
+              { value: 'On Trip', label: 'On Trip' },
+              { value: 'In Shop', label: 'In Shop' },
+              { value: 'Retired', label: 'Retired' },
+            ]}
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+            className="w-full bg-[#121212] text-sm"
+          />
+
+          <Select
+            placeholder="All Types"
+            options={[
+              { value: 'Truck', label: 'Truck' },
+              { value: 'Van', label: 'Van' },
+              { value: 'Trailer', label: 'Trailer' },
+              { value: 'Utility', label: 'Utility' },
+            ]}
+            value={type}
+            onChange={(e) => {
+              setType(e.target.value);
+              setPage(1);
+            }}
+            className="w-full bg-[#121212] text-sm"
+          />
+
+          <Select
+            placeholder="All Regions"
+            options={[
+              { value: 'North', label: 'North' },
+              { value: 'South', label: 'South' },
+              { value: 'East', label: 'East' },
+              { value: 'West', label: 'West' },
+              { value: 'Central', label: 'Central' },
+            ]}
+            value={region}
+            onChange={(e) => {
+              setRegion(e.target.value);
+              setPage(1);
+            }}
+            className="w-full bg-[#121212] text-sm"
+          />
+
+          <Select
+            placeholder="Sort By"
+            options={[
+              { value: '-createdAt', label: 'Newest Registered' },
+              { value: 'createdAt', label: 'Oldest Registered' },
+              { value: '-odometer', label: 'Odometer (High-Low)' },
+              { value: 'odometer', label: 'Odometer (Low-High)' },
+              { value: '-maxLoadCapacity', label: 'Capacity (High-Low)' },
+              { value: 'maxLoadCapacity', label: 'Capacity (Low-High)' },
+            ]}
+            value={sort}
+            onChange={(e) => {
+              setSort(e.target.value);
+              setPage(1);
+            }}
+            className="w-full bg-[#121212] text-sm"
+          />
+        </div>
       </Card>
 
       {/* Enterprise Data Table */}

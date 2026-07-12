@@ -78,11 +78,21 @@ export const ReportsPage = () => {
     <div className="flex flex-col gap-5">
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-base font-bold text-white tracking-wide uppercase">Reports &amp; Analytics</h1>
-          <p className="text-[10px] text-gray-500 mt-0.5">ROI = (Revenue − Maintenance + Fuel) / Acquisition Cost</p>
-        </div>
+    <div className="flex items-center justify-between">
+      <div>
+        <h1 className="text-base font-bold text-white tracking-wide uppercase">Reports &amp; Analytics</h1>
+        <p className="text-[10px] text-gray-500 mt-0.5">ROI = (Revenue − Maintenance + Fuel) / Acquisition Cost</p>
+      </div>
+      <div className="flex items-center gap-2">
+        {reports.length > 0 && (
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 px-3 py-1.5 bg-neutral-800 text-white text-xs font-bold rounded-sm border border-[#2a2a2a] hover:bg-neutral-700 transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export PDF
+          </button>
+        )}
         {isExportAllowed && reports.length > 0 && (
           <button
             onClick={() => exportCSV()}
@@ -94,6 +104,7 @@ export const ReportsPage = () => {
           </button>
         )}
       </div>
+    </div>
 
       {/* ── 4 KPI tiles ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

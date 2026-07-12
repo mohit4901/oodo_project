@@ -34,3 +34,34 @@
     background: #444;
   }
 }
+
+@media print {
+  aside, nav, button, .no-print {
+    display: none !important;
+  }
+  body, main {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .bg-\[\#1c1c1c\] {
+    background-color: #f9fafb !important;
+    border-color: #e5e7eb !important;
+  }
+  .border-\[\#2a2a2a\] {
+    border-color: #e5e7eb !important;
+  }
+  .divide-\[\#222\] > * + * {
+    border-color: #e5e7eb !important;
+  }
+  .text-white {
+    color: #111827 !important;
+  }
+  .text-gray-500 {
+    color: #6b7280 !important;
+  }
+  .text-gray-400 {
+    color: #4b5563 !important;
+  }
+}
