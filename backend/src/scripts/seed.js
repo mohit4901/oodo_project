@@ -79,20 +79,16 @@ const seedDatabase = async () => {
     /* ─── 5. TRIPS ───────────────────────────────────────────────── */
     console.log('🗺️ Seeding trips...');
     const tripsData = [
-      { source: 'Gandhinagar Depot', destination: 'Mumbai Hub',     vehicle: vehicles[1]._id, driver: drivers[0]._id, cargoWeight: 12000, status: 'Dispatched', isActive: true  },
-      { source: 'Delhi Yard',        destination: 'Chandigarh WH',  vehicle: vehicles[4]._id, driver: drivers[3]._id, cargoWeight: 17000, status: 'Active',     isActive: true  },
-      { source: 'Pune Plant',        destination: 'Nashik Depot',   vehicle: vehicles[3]._id, driver: drivers[4]._id, cargoWeight: 6000,  status: 'Draft',      isActive: true  },
-      { source: 'Bangalore Cold',    destination: 'Chennai Port',   vehicle: null,            driver: null,            cargoWeight: 3000,  status: 'Draft',      isActive: true  },
-      { source: 'Jaipur Depot',      destination: 'Ajmer City',     vehicle: vehicles[6]._id, driver: drivers[6]._id, cargoWeight: 800,   status: 'Completed',  isActive: false },
-      { source: 'Kolkata Hub',       destination: 'Siliguri WH',    vehicle: vehicles[7]._id, driver: drivers[1]._id, cargoWeight: 14000, status: 'Completed',  isActive: false },
-      { source: 'Ahmedabad Depo',    destination: 'Surat Plant',    vehicle: vehicles[0]._id, driver: drivers[2]._id, cargoWeight: 9500,  status: 'Cancelled',  isActive: false },
-      { source: 'Lucknow Yard',      destination: 'Varanasi WH',    vehicle: null,            driver: null,            cargoWeight: 5000,  status: 'Draft',      isActive: true  },
+      { tripId: 'TRIP-2026-001', source: 'Gandhinagar Depot', destination: 'Mumbai Hub',     vehicle: vehicles[1]._id, driver: drivers[0]._id, cargoWeight: 12000, plannedDistance: 530, revenue: 45000, status: 'Dispatched', isActive: true  },
+      { tripId: 'TRIP-2026-002', source: 'Delhi Yard',        destination: 'Chandigarh WH',  vehicle: vehicles[4]._id, driver: drivers[3]._id, cargoWeight: 17000, plannedDistance: 250, revenue: 32000, status: 'Active',     isActive: true  },
+      { tripId: 'TRIP-2026-003', source: 'Pune Plant',        destination: 'Nashik Depot',   vehicle: vehicles[3]._id, driver: drivers[4]._id, cargoWeight: 6000,  plannedDistance: 210, revenue: 15000, status: 'Draft',      isActive: true  },
+      { tripId: 'TRIP-2026-004', source: 'Bangalore Cold',    destination: 'Chennai Port',   vehicle: vehicles[0]._id, driver: drivers[1]._id, cargoWeight: 3000,  plannedDistance: 350, revenue: 22000, status: 'Draft',      isActive: true  },
+      { tripId: 'TRIP-2026-005', source: 'Jaipur Depot',      destination: 'Ajmer City',     vehicle: vehicles[6]._id, driver: drivers[6]._id, cargoWeight: 800,   plannedDistance: 135, revenue: 8000,  status: 'Completed',  isActive: false },
+      { tripId: 'TRIP-2026-006', source: 'Kolkata Hub',       destination: 'Siliguri WH',    vehicle: vehicles[7]._id, driver: drivers[1]._id, cargoWeight: 14000, plannedDistance: 560, revenue: 52000, status: 'Completed',  isActive: false },
+      { tripId: 'TRIP-2026-007', source: 'Ahmedabad Depo',    destination: 'Surat Plant',    vehicle: vehicles[0]._id, driver: drivers[2]._id, cargoWeight: 9500,  plannedDistance: 260, revenue: 18000, status: 'Cancelled',  isActive: false },
+      { tripId: 'TRIP-2026-008', source: 'Lucknow Yard',      destination: 'Varanasi WH',    vehicle: vehicles[4]._id, driver: drivers[7]._id, cargoWeight: 5000,  plannedDistance: 320, revenue: 20000, status: 'Draft',      isActive: true  },
     ];
-    const trips = await Trip.insertMany(tripsData.map(t => ({
-      ...t,
-      vehicle: t.vehicle ?? undefined,
-      driver:  t.driver  ?? undefined,
-    })));
+    const trips = await Trip.insertMany(tripsData);
 
     /* ─── 6. MAINTENANCE LOGS ────────────────────────────────────── */
     console.log('🔧 Seeding maintenance logs...');
