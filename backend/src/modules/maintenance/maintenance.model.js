@@ -13,6 +13,14 @@ const maintenanceLogSchema = new mongoose.Schema(
       required: [true, 'Maintenance description is required'],
       trim: true,
     },
+    maintenanceType: {
+      type: String,
+      enum: {
+        values: ['Routine', 'Breakdown', 'Inspection', 'Repair'],
+        message: 'Type must be Routine, Breakdown, Inspection, or Repair',
+      },
+      required: [true, 'Maintenance type is required'],
+    },
     startDate: {
       type: Date,
       required: [true, 'Start date is required'],
