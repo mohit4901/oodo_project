@@ -181,7 +181,7 @@ export const DashboardPage = () => {
           <div>
             <span className="text-xs text-gray-500 font-semibold block uppercase">Fleet Utilization</span>
             <span className="text-2xl font-bold text-white leading-none">
-              {kpis.utilizationRate.toFixed(1)}%
+              {(kpis.utilizationRate ?? 0).toFixed(1)}%
             </span>
           </div>
         </Card>
