@@ -66,14 +66,14 @@ const seedDatabase = async () => {
     /* ─── 4. DRIVERS ─────────────────────────────────────────────── */
     console.log('🧑‍✈️ Seeding drivers...');
     const drivers = await Driver.insertMany([
-      { name: 'Rajesh Yadav',   licenseNumber: 'DL1420210087612', licenseExpiryDate: new Date('2028-12-31'), contactNumber: '+919876543210', safetyScore: 92, status: 'Available' },
-      { name: 'Sardar Singh',   licenseNumber: 'PB0220190034123', licenseExpiryDate: new Date('2029-05-15'), contactNumber: '+919988776655', safetyScore: 88, status: 'Available' },
-      { name: 'Mohit Chauhan',  licenseNumber: 'HR2620220056234', licenseExpiryDate: new Date('2026-04-01'), contactNumber: '+918877665544', safetyScore: 75, status: 'Available' },
-      { name: 'Deepak Verma',   licenseNumber: 'UP3220200011871', licenseExpiryDate: new Date('2027-08-20'), contactNumber: '+917766554433', safetyScore: 95, status: 'On Trip'   },
-      { name: 'Arjun Nair',     licenseNumber: 'KL0120210098712', licenseExpiryDate: new Date('2028-03-10'), contactNumber: '+916655443322', safetyScore: 83, status: 'Available' },
-      { name: 'Suresh Babu',    licenseNumber: 'TN2220190045671', licenseExpiryDate: new Date('2025-01-15'), contactNumber: '+915544332211', safetyScore: 61, status: 'Suspended' },
-      { name: 'Harpreet Singh', licenseNumber: 'PB0120230076543', licenseExpiryDate: new Date('2030-11-30'), contactNumber: '+914433221100', safetyScore: 97, status: 'Available' },
-      { name: 'Vijay Patil',    licenseNumber: 'MH1220210067891', licenseExpiryDate: new Date('2024-06-30'), contactNumber: '+913322110099', safetyScore: 72, status: 'Available' },
+      { name: 'Rajesh Yadav',   licenseNumber: 'DL1420210087612', licenseCategory: 'Heavy Duty',    licenseExpiryDate: new Date('2028-12-31'), contactNumber: '+919876543210', safetyScore: 92, status: 'Available' },
+      { name: 'Sardar Singh',   licenseNumber: 'PB0220190034123', licenseCategory: 'Heavy Duty',    licenseExpiryDate: new Date('2029-05-15'), contactNumber: '+919988776655', safetyScore: 88, status: 'Available' },
+      { name: 'Mohit Chauhan',  licenseNumber: 'HR2620220056234', licenseCategory: 'Light Vehicle',  licenseExpiryDate: new Date('2026-04-01'), contactNumber: '+918877665544', safetyScore: 75, status: 'Available' },
+      { name: 'Deepak Verma',   licenseNumber: 'UP3220200011871', licenseCategory: 'Commercial',     licenseExpiryDate: new Date('2027-08-20'), contactNumber: '+917766554433', safetyScore: 95, status: 'On Trip'   },
+      { name: 'Arjun Nair',     licenseNumber: 'KL0120210098712', licenseCategory: 'Commercial',     licenseExpiryDate: new Date('2028-03-10'), contactNumber: '+916655443322', safetyScore: 83, status: 'Available' },
+      { name: 'Suresh Babu',    licenseNumber: 'TN2220190045671', licenseCategory: 'Heavy Duty',    licenseExpiryDate: new Date('2025-01-15'), contactNumber: '+915544332211', safetyScore: 61, status: 'Suspended' },
+      { name: 'Harpreet Singh', licenseNumber: 'PB0120230076543', licenseCategory: 'Light Vehicle',  licenseExpiryDate: new Date('2030-11-30'), contactNumber: '+914433221100', safetyScore: 97, status: 'Available' },
+      { name: 'Vijay Patil',    licenseNumber: 'MH1220210067891', licenseCategory: 'Commercial',     licenseExpiryDate: new Date('2024-06-30'), contactNumber: '+913322110099', safetyScore: 72, status: 'Available' },
     ]);
 
     /* ─── 5. TRIPS ───────────────────────────────────────────────── */
