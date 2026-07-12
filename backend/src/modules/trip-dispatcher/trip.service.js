@@ -12,6 +12,35 @@ class TripService {
    * Create a new trip in Draft state
    */
   async createTrip(tripData, userId) {
+    const [vehicle, driver] = await Promise.all([
+      Vehicle.findOne({ _id: tripData.vehicle, isActive: true }),
+      Driver.findOne({ _id: tripData.driver, isActive: true }),
+    ]);
+
+    if (!vehicle) throw new NotFoundError('Assigned vehicle not found');
+    if (!driver) throw new NotFoundError('Assigned driver not found');
+
+    // 1. Vehicle status checks
+    if (vehicle.status !== 'Available') {
+      throw new BadRequestError(`Vehicle ${vehicle.registrationNumber} is not available (Status: ${vehicle.status})`);
+    }
+
+    // 2. Driver status and compliance checks
+    if (driver.status !== 'Available') {
+      throw new BadRequestError(`Driver ${driver.name} is not available (Status: ${driver.status})`);
+    }
+    if (driver.status === 'Suspended') {
+      throw new BadRequestError(`Driver ${driver.name} is Suspended and cannot be assigned to trips`);
+    }
+    if (new Date(driver.licenseExpiryDate) < new Date()) {
+      throw new BadRequestError(`Driver ${driver.name} has an expired driving license`);
+    }
+
+    // 3. Cargo load constraint check
+    if (tripData.cargoWeight > vehicle.maxLoadCapacity) {
+      throw new BadRequestError(`Cargo weight (${tripData.cargoWeight} kg) exceeds vehicle max load capacity (${vehicle.maxLoadCapacity} kg)`);
+    }
+
     const tripCount = await Trip.countDocuments();
     const generatedTripId = `TR-${10000 + tripCount + 1}`;
 
@@ -70,7 +99,10 @@ class TripService {
       if (driver.status !== 'Available') {
         throw new BadRequestError(`Driver ${driver.name} is not available (Status: ${driver.status})`);
       }
-      if (driver.licenseExpiryDate < new Date()) {
+      if (driver.status === 'Suspended') {
+        throw new BadRequestError(`Driver ${driver.name} is Suspended and cannot be assigned to trips`);
+      }
+      if (new Date(driver.licenseExpiryDate) < new Date()) {
         throw new BadRequestError(`Driver ${driver.name} has an expired driving license`);
       }
 

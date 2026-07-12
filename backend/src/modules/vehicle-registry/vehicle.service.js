@@ -190,6 +190,67 @@ class VehicleService {
       },
     ]);
   }
+
+  /**
+   * Upload a vehicle document
+   */
+  async addVehicleDocument(vehicleId, file, name, userId) {
+    const vehicle = await Vehicle.findOne({ _id: vehicleId, isActive: true });
+    if (!vehicle) {
+      throw new NotFoundError('Vehicle not found');
+    }
+
+    const documentUrl = `/uploads/${file.filename}`;
+    const newDoc = {
+      name: name || file.originalname,
+      url: documentUrl,
+      uploadedAt: new Date(),
+    };
+
+    vehicle.documents.push(newDoc);
+    vehicle.updatedBy = userId;
+    await vehicle.save();
+
+    await auditService.log({
+      user: userId,
+      action: 'VEHICLE_DOCUMENT_UPLOADED',
+      entity: 'Vehicle',
+      entityId: vehicleId,
+      newValue: newDoc,
+    });
+
+    return vehicle;
+  }
+
+  /**
+   * Remove a vehicle document
+   */
+  async removeVehicleDocument(vehicleId, docId, userId) {
+    const vehicle = await Vehicle.findOne({ _id: vehicleId, isActive: true });
+    if (!vehicle) {
+      throw new NotFoundError('Vehicle not found');
+    }
+
+    const docIndex = vehicle.documents.findIndex(d => d._id.toString() === docId);
+    if (docIndex === -1) {
+      throw new NotFoundError('Document not found');
+    }
+
+    const removedDoc = vehicle.documents[docIndex];
+    vehicle.documents.splice(docIndex, 1);
+    vehicle.updatedBy = userId;
+    await vehicle.save();
+
+    await auditService.log({
+      user: userId,
+      action: 'VEHICLE_DOCUMENT_DELETED',
+      entity: 'Vehicle',
+      entityId: vehicleId,
+      oldValue: removedDoc,
+    });
+
+    return vehicle;
+  }
 }
 
 export const vehicleService = new VehicleService();

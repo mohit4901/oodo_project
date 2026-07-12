@@ -88,3 +88,34 @@ export const getVehicleMetrics = catchAsync(async (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+export const uploadVehicleDocument = catchAsync(async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'Please upload a document' });
+  }
+
+  const { name } = req.body;
+  const vehicle = await vehicleService.addVehicleDocument(req.params.id, req.file, name, req.user._id);
+
+  res.status(200).json({
+    success: true,
+    message: 'Vehicle document uploaded successfully',
+    data: vehicle,
+    errors: null,
+    pagination: null,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+export const deleteVehicleDocument = catchAsync(async (req, res) => {
+  const vehicle = await vehicleService.removeVehicleDocument(req.params.id, req.params.docId, req.user._id);
+
+  res.status(200).json({
+    success: true,
+    message: 'Vehicle document deleted successfully',
+    data: vehicle,
+    errors: null,
+    pagination: null,
+    timestamp: new Date().toISOString(),
+  });
+});

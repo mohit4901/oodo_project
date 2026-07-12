@@ -6,6 +6,8 @@ import {
   updateVehicle,
   deleteVehicle,
   getVehicleMetrics,
+  uploadVehicleDocument,
+  deleteVehicleDocument,
 } from './vehicle.controller.js';
 import {
   validateCreateVehicle,
@@ -16,6 +18,7 @@ import {
 import { handleValidationErrors } from '../../middlewares/validate.middleware.js';
 import { authenticate } from '../../middlewares/auth.middleware.js';
 import { authorize } from '../../middlewares/rbac.middleware.js';
+import { upload } from '../../utils/upload.js';
 
 const router = Router();
 
@@ -68,6 +71,20 @@ router.delete(
   validateVehicleId,
   handleValidationErrors,
   deleteVehicle
+);
+
+// Document management routes
+router.post(
+  '/:id/documents',
+  authorize('admin', 'fleet_manager'),
+  upload.single('document'),
+  uploadVehicleDocument
+);
+
+router.delete(
+  '/:id/documents/:docId',
+  authorize('admin', 'fleet_manager'),
+  deleteVehicleDocument
 );
 
 export default router;

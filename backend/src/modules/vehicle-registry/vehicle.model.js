@@ -74,6 +74,13 @@ const vehicleSchema = new mongoose.Schema(
       default: true,
       index: true,
     },
+    documents: [
+      {
+        name: { type: String, required: true },
+        url: { type: String, required: true },
+        uploadedAt: { type: Date, default: Date.now }
+      }
+    ],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

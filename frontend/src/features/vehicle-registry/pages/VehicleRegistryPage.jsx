@@ -14,7 +14,7 @@ import Button from '../../../components/ui/Button.jsx';
 import Input from '../../../components/ui/Input.jsx';
 import Select from '../../../components/ui/Select.jsx';
 import Badge from '../../../components/ui/Badge.jsx';
-import { Plus, Search, Edit2, Trash2, X, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, AlertTriangle, FileText } from 'lucide-react';
 
 // Zod Schema for Vehicle Registration / Update
 const vehicleSchema = zod.object({
@@ -54,6 +54,7 @@ export const VehicleRegistryPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [deletingVehicleId, setDeletingVehicleId] = useState(null);
+  const [docsVehicle, setDocsVehicle] = useState(null); // Vehicle to manage documents for
 
   // Queries & Mutations
   const { data: vehiclesData, isLoading } = useVehiclesList({
@@ -308,6 +309,13 @@ export const VehicleRegistryPage = () => {
                             <Edit2 className="h-3.5 w-3.5" />
                           </button>
                           <button
+                            onClick={() => setDocsVehicle(vehicle)}
+                            className="p-1 hover:bg-sky-950/20 text-gray-400 hover:text-sky-400 rounded-sm transition-colors cursor-pointer"
+                            title="Manage Documents"
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                          </button>
+                          <button
                             onClick={() => setDeletingVehicleId(vehicle._id)}
                             className="p-1 hover:bg-red-950/20 text-gray-400 hover:text-red-400 rounded-sm transition-colors cursor-pointer"
                             title="Delete Vehicle"
@@ -467,6 +475,95 @@ export const VehicleRegistryPage = () => {
                   {editingVehicle ? 'Update Vehicle' : 'Register Vehicle'}
                 </Button>
               </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {/* Document Management Modal */}
+      {docsVehicle && (
+        <div className="fixed inset-0 z-50 bg-[#000]/60 flex items-center justify-center p-4">
+          <Card className="w-full max-w-lg relative p-6 flex flex-col gap-5">
+            <button
+              onClick={() => setDocsVehicle(null)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-white cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Vehicle Documents</h3>
+              <p className="text-[11px] text-gray-500 mt-0.5">{docsVehicle.registrationNumber} — {docsVehicle.vehicleName}</p>
+            </div>
+
+            {/* Existing documents */}
+            <div className="flex flex-col gap-2">
+              {(docsVehicle.documents ?? []).length === 0 ? (
+                <p className="text-[11px] text-gray-600">No documents uploaded yet.</p>
+              ) : (
+                (docsVehicle.documents ?? []).map((doc) => (
+                  <div key={doc._id} className="flex items-center justify-between bg-[#1a1a1a] border border-[#2a2a2a] rounded-sm px-3 py-2">
+                    <a href={`http://localhost:5050${doc.url}`} target="_blank" rel="noreferrer" className="text-xs text-sky-400 hover:underline flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5" />
+                      {doc.name}
+                    </a>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const { default: api } = await import('../../../lib/axios.js');
+                          await api.delete(`/vehicles/${docsVehicle._id}/documents/${doc._id}`);
+                          setDocsVehicle(prev => ({ ...prev, documents: prev.documents.filter(d => d._id !== doc._id) }));
+                        } catch (e) {
+                          console.error(e);
+                        }
+                      }}
+                      className="text-red-400 hover:text-red-300 text-xs"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Upload new document */}
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                try {
+                  const { default: api } = await import('../../../lib/axios.js');
+                  const res = await api.post(`/vehicles/${docsVehicle._id}/documents`, fd, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                  });
+                  setDocsVehicle(res.data.data);
+                  e.target.reset();
+                } catch (err) {
+                  console.error(err);
+                }
+              }}
+              className="flex flex-col gap-3 border-t border-[#2a2a2a] pt-4"
+            >
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">Upload New Document</p>
+              <div className="flex gap-3">
+                <input
+                  name="name"
+                  placeholder="Document name (e.g. RC Book)"
+                  className="flex-1 bg-[#121212] border border-[#2a2a2a] rounded-sm px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-accent-orange"
+                />
+                <input
+                  name="document"
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg"
+                  required
+                  className="text-xs text-gray-400 file:mr-3 file:py-1 file:px-3 file:border-0 file:text-xs file:font-semibold file:bg-accent-orange file:text-white file:rounded-sm hover:file:bg-orange-500 cursor-pointer"
+                />
+              </div>
+              <button
+                type="submit"
+                className="self-end px-4 py-1.5 bg-accent-orange hover:bg-orange-500 text-white text-xs font-bold rounded-sm transition-colors"
+              >
+                Upload
+              </button>
             </form>
           </Card>
         </div>
