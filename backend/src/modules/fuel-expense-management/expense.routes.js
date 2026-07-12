@@ -25,7 +25,7 @@ router.use(authenticate);
 // Read-only queries accessible to operation managers and financial analysts
 router.get(
   '/fuel',
-  authorize('admin', 'fleet_manager', 'dispatcher', 'financial_analyst'),
+  authorize('admin', 'fleet_manager', 'dispatcher', 'financial_analyst', 'safety_officer'),
   validateQueryFuelLogs,
   handleValidationErrors,
   getFuelLogs
@@ -33,7 +33,7 @@ router.get(
 
 router.get(
   '/',
-  authorize('admin', 'fleet_manager', 'dispatcher', 'financial_analyst'),
+  authorize('admin', 'fleet_manager', 'dispatcher', 'financial_analyst', 'safety_officer'),
   validateQueryExpenses,
   handleValidationErrors,
   getExpenses

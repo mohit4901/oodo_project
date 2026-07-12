@@ -149,6 +149,14 @@ export const TripDispatcherPage = () => {
         </div>
       </div>
 
+      {/* Read-only banner for non-dispatchers */}
+      {!isDispatcher && (
+        <div className="flex items-center gap-3 px-4 py-2.5 rounded-sm border border-amber-700/40 bg-amber-950/20 text-amber-400 text-xs font-semibold">
+          <span>🔒 Read Only Mode</span>
+          <span className="font-normal text-amber-500/70">Your role can view trip records but cannot create, dispatch, or modify trips.</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
 
         {/* ── LEFT: Create Trip form ── */}

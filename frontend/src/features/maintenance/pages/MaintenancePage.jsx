@@ -74,7 +74,10 @@ export const MaintenancePage = () => {
   const handleCloseSubmit = (data) =>
     closeLog({ id: closingLog._id, data }, { onSuccess: () => setClosingLog(null) });
 
-  const isWriteAllowed = ['admin', 'fleet_manager'].includes(user?.role);
+  // admin/fleet_manager can create logs AND close them; drivers can only create
+  const isWriteAllowed = ['admin', 'fleet_manager', 'driver'].includes(user?.role);
+  const canClose       = ['admin', 'fleet_manager'].includes(user?.role);
+  const isReadOnly     = ['safety_officer', 'financial_analyst', 'dispatcher'].includes(user?.role);
   const logs           = logsData?.data ?? [];
   const pagination     = logsData?.pagination ?? { page: 1, pages: 1, total: 0 };
   const vehicles       = vehiclesData?.data ?? [];
@@ -87,6 +90,14 @@ export const MaintenancePage = () => {
         <h1 className="text-base font-bold text-white tracking-wide uppercase">Maintenance</h1>
         <p className="text-[10px] text-gray-500 mt-0.5">Schedule service records and track vehicle repair status</p>
       </div>
+
+      {/* Read-only banner */}
+      {isReadOnly && (
+        <div className="flex items-center gap-3 px-4 py-2.5 rounded-sm border border-amber-700/40 bg-amber-950/20 text-amber-400 text-xs font-semibold">
+          <span>🔒 Read Only Mode</span>
+          <span className="font-normal text-amber-500/70">Your role can view maintenance logs but cannot create or close records.</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
 
@@ -215,7 +226,7 @@ export const MaintenancePage = () => {
                       <td className="px-4 py-3">
                         <StatusBadge status={log.status} />
                       </td>
-                      {isWriteAllowed && (
+                      {canClose && (
                         <td className="px-4 py-3">
                           {log.status === 'Active' && (
                             <button

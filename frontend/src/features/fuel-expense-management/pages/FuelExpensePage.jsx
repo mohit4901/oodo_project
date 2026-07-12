@@ -119,6 +119,8 @@ export const FuelExpensePage = () => {
   };
 
   const isFinancialStaff = ['admin', 'fleet_manager', 'financial_analyst'].includes(user?.role);
+  const canLogFuel      = ['admin', 'fleet_manager', 'driver'].includes(user?.role);
+  const isReadOnly      = user?.role === 'safety_officer';
   
   const expenses = expenseData?.data || [];
   const expensesPagination = expenseData?.pagination || { page: 1, pages: 1, total: 0 };
@@ -132,6 +134,14 @@ export const FuelExpensePage = () => {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Read Only banner for safety_officer */}
+      {isReadOnly && (
+        <div className="flex items-center gap-3 px-4 py-2.5 rounded-sm border border-amber-700/40 bg-amber-950/20 text-amber-400 text-xs font-semibold">
+          <span>🔒 Read Only Mode</span>
+          <span className="font-normal text-amber-500/70">Safety Officers can view expense and fuel records but cannot log new entries.</span>
+        </div>
+      )}
+
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -139,10 +149,12 @@ export const FuelExpensePage = () => {
           <p className="text-xs text-gray-500">Track fuel cards, record tolls, and monitor operational costs</p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" size="sm" onClick={() => setIsFuelModalOpen(true)}>
-            <Fuel className="h-4 w-4 mr-2" />
-            Log Fuel
-          </Button>
+          {canLogFuel && (
+            <Button variant="outline" size="sm" onClick={() => setIsFuelModalOpen(true)}>
+              <Fuel className="h-4 w-4 mr-2" />
+              Log Fuel
+            </Button>
+          )}
           {isFinancialStaff && (
             <Button variant="primary" size="sm" onClick={() => setIsExpenseModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />

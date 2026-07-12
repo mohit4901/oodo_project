@@ -75,7 +75,7 @@ export const AppRouter = () => {
           <Route 
             path="expenses" 
             element={
-              <ProtectedRoute allowedRoles={['admin', 'fleet_manager', 'dispatcher', 'financial_analyst', 'driver']}>
+              <ProtectedRoute allowedRoles={['admin', 'fleet_manager', 'dispatcher', 'financial_analyst', 'driver', 'safety_officer']}>
                 <FuelExpensePage />
               </ProtectedRoute>
             } 
