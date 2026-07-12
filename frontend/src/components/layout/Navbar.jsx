@@ -1,11 +1,13 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { Bell, Search, User } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext.jsx';
+import { Bell, Search, User, Sun, Moon } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const Navbar = () => {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
 
   // Maps pathnames to screen header titles
@@ -43,6 +45,18 @@ export const Navbar = () => {
             className="w-full bg-[#181818] border border-border-thin rounded-sm pl-9 pr-4 py-1.5 text-xs text-gray-300 placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-accent-orange focus:border-accent-orange cursor-pointer"
           />
         </div>
+
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          className="p-1.5 bg-[#181818] border border-border-thin rounded-sm hover:bg-[#222] text-gray-400 hover:text-white transition-colors cursor-pointer select-none"
+        >
+          {theme === 'dark'
+            ? <Sun className="h-4 w-4 text-amber-400" />
+            : <Moon className="h-4 w-4 text-indigo-400" />
+          }
+        </button>
 
         {/* Notifications */}
         <button
