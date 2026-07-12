@@ -80,7 +80,7 @@ const seedDatabase = async () => {
     console.log('🗺️ Seeding trips...');
     const tripsData = [
       { tripId: 'TRIP-2026-001', source: 'Gandhinagar Depot', destination: 'Mumbai Hub',     vehicle: vehicles[1]._id, driver: drivers[0]._id, cargoWeight: 12000, plannedDistance: 530, revenue: 45000, status: 'Dispatched', isActive: true  },
-      { tripId: 'TRIP-2026-002', source: 'Delhi Yard',        destination: 'Chandigarh WH',  vehicle: vehicles[4]._id, driver: drivers[3]._id, cargoWeight: 17000, plannedDistance: 250, revenue: 32000, status: 'Active',     isActive: true  },
+      { tripId: 'TRIP-2026-002', source: 'Delhi Yard',        destination: 'Chandigarh WH',  vehicle: vehicles[4]._id, driver: drivers[3]._id, cargoWeight: 17000, plannedDistance: 250, revenue: 32000, status: 'Dispatched', isActive: true  },
       { tripId: 'TRIP-2026-003', source: 'Pune Plant',        destination: 'Nashik Depot',   vehicle: vehicles[3]._id, driver: drivers[4]._id, cargoWeight: 6000,  plannedDistance: 210, revenue: 15000, status: 'Draft',      isActive: true  },
       { tripId: 'TRIP-2026-004', source: 'Bangalore Cold',    destination: 'Chennai Port',   vehicle: vehicles[0]._id, driver: drivers[1]._id, cargoWeight: 3000,  plannedDistance: 350, revenue: 22000, status: 'Draft',      isActive: true  },
       { tripId: 'TRIP-2026-005', source: 'Jaipur Depot',      destination: 'Ajmer City',     vehicle: vehicles[6]._id, driver: drivers[6]._id, cargoWeight: 800,   plannedDistance: 135, revenue: 8000,  status: 'Completed',  isActive: false },
