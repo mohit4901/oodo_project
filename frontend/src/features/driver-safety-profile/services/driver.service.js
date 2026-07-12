@@ -1,8 +1,11 @@
 import api from '../../../lib/axios.js';
 
+const clean = (obj) =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== '' && v != null));
+
 export const driverApi = {
   getDrivers: async (params = {}) => {
-    const response = await api.get('/drivers', { params });
+    const response = await api.get('/drivers', { params: clean(params) });
     return response.data;
   },
   getDriverById: async (id) => {

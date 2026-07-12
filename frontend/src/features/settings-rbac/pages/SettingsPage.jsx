@@ -4,17 +4,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as zod from 'zod';
 import { useSettingsRoles, useUpdatePermissions } from '../hooks/useSettings.js';
 import { useAuth } from '../../../context/AuthContext.jsx';
-import { Check, Minus } from 'lucide-react';
+import { ShieldOff } from 'lucide-react';
 
 /* ── RBAC table config (matches mockup columns) ─────────────────── */
 const MODULES = ['Fleet', 'Driver', 'Trips', 'Fuel/Exp', 'Analytics'];
 
 const MODULE_PERMISSION_MAP = {
-  Fleet:     { full: 'write_vehicles',  view: 'read_vehicles'  },
-  Driver:    { full: 'write_drivers',   view: 'read_drivers'   },
-  Trips:     { full: 'write_trips',     view: 'read_trips'     },
-  'Fuel/Exp':{ full: 'write_expenses',  view: 'read_expenses'  },
-  Analytics: { full: 'write_reports',   view: 'read_reports'   },
+  Fleet:      { full: 'write_vehicles',  view: 'read_vehicles'  },
+  Driver:     { full: 'write_drivers',   view: 'read_drivers'   },
+  Trips:      { full: 'write_trips',     view: 'read_trips'     },
+  'Fuel/Exp': { full: 'write_expenses',  view: 'read_expenses'  },
+  Analytics:  { full: 'write_reports',   view: 'read_reports'   },
 };
 
 const ROLE_DISPLAY = {
@@ -25,38 +25,33 @@ const ROLE_DISPLAY = {
   financial_analyst: 'Financial Analyst',
 };
 
-/* shows ✓ / View / – depending on permissions array */
 function PermCell({ permissions = [], module }) {
-  const map   = MODULE_PERMISSION_MAP[module];
+  const map     = MODULE_PERMISSION_MAP[module];
   const hasFull = permissions.includes(map.full);
   const hasView = permissions.includes(map.view);
-
-  if (hasFull) return <span className="text-accent-orange font-bold text-sm">✓</span>;
+  if (hasFull) return <span className="text-accent-orange font-bold text-base">✓</span>;
   if (hasView) return <span className="text-gray-400 text-[11px] font-semibold">View</span>;
-  return <span className="text-gray-700 text-sm">–</span>;
+  return <span className="text-gray-700">–</span>;
 }
 
-/* general settings zod schema */
+/* ── general settings zod schema ────────────────────────────────── */
 const generalSchema = zod.object({
   depotName:    zod.string().min(2, 'Depot name required').trim(),
   company:      zod.string().min(2, 'Company name required').trim(),
   distanceUnit: zod.string().nonempty('Select a unit'),
 });
 
-/* ── page ───────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════ */
 export const SettingsPage = () => {
-  const { user } = useAuth();
-  const { data: roles = [], isLoading } = useSettingsRoles();
-  const { mutate: updatePermissions, isPending: saving } = useUpdatePermissions();
-  const [savedGeneral, setSavedGeneral] = useState(false);
+  const { user }    = useAuth();
+  const isAdmin     = user?.role === 'admin';
+  const canEdit     = ['admin', 'fleet_manager'].includes(user?.role);
 
-  const isAdmin = user?.role === 'admin';
+  /* ── live data from backend (all authenticated users can now read) */
+  const { data: roles = [], isLoading, error } = useSettingsRoles();
+  const [savedGeneral, setSavedGeneral]         = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
+  const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(generalSchema),
     defaultValues: {
       depotName:    'Gandhinagar Depot GJ9',
@@ -86,68 +81,74 @@ export const SettingsPage = () => {
           <div className="px-5 py-3 border-b border-[#2a2a2a]">
             <h2 className="text-xs font-bold text-white uppercase tracking-widest">General</h2>
           </div>
-          <form onSubmit={handleSubmit(onSaveGeneral)} className="flex flex-col gap-4 p-5">
 
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">Depot Name</label>
-              <input
-                {...register('depotName')}
-                className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange placeholder:text-gray-700"
-                placeholder="Gandhinagar Depot GJ9"
-              />
-              {errors.depotName && <span className="text-[10px] text-red-400">{errors.depotName.message}</span>}
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">Company</label>
-              <input
-                {...register('company')}
-                className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange placeholder:text-gray-700"
-                placeholder="India (IN)"
-              />
-              {errors.company && <span className="text-[10px] text-red-400">{errors.company.message}</span>}
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">Distance Unit</label>
-              <select
-                {...register('distanceUnit')}
-                className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange cursor-pointer"
-              >
-                <option value="Kilometers">Kilometers</option>
-                <option value="Miles">Miles</option>
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className={`w-full py-2.5 text-sm font-bold rounded-sm transition-colors ${
-                savedGeneral
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-accent-orange hover:bg-orange-500 text-white'
-              }`}
-            >
-              {savedGeneral ? '✓ Saved' : 'Save changes'}
-            </button>
-
-            {/* Status flow legend */}
-            <div className="flex flex-col gap-2 mt-2 text-[10px] text-gray-500">
-              <div className="flex items-center gap-2">
-                <span className="text-emerald-400 font-semibold">Available</span>
-                <span className="text-gray-700">─────────────────────────►</span>
-                <span className="text-amber-400 font-semibold">In Shop</span>
+          {/* non-editors see a lock banner instead of an editable form */}
+          {!canEdit ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-14 px-6 text-center">
+              <div className="p-3 bg-amber-950/30 border border-amber-800/40 rounded-full">
+                <ShieldOff className="h-6 w-6 text-amber-400" />
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-amber-400 font-semibold">In Shop</span>
-                <span className="text-gray-700">────────────────────────►</span>
-                <span className="text-emerald-400 font-semibold">Available</span>
+              <div>
+                <p className="text-sm font-bold text-white">Insufficient Permissions</p>
+                <p className="text-[11px] text-gray-500 mt-1">
+                  Your role <span className="text-amber-400 font-semibold">({ROLE_DISPLAY[user?.role] ?? user?.role})</span> does not have
+                  access to modify general settings.
+                </p>
+                <p className="text-[10px] text-gray-600 mt-2 italic">Contact an Admin or Fleet Manager to make changes.</p>
               </div>
-              <p className="text-gray-600 italic">Note: In Shop vehicles are removed from the dispatcher pool.</p>
             </div>
-          </form>
+          ) : (
+            <form onSubmit={handleSubmit(onSaveGeneral)} className="flex flex-col gap-4 p-5">
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">Depot Name</label>
+                <input {...register('depotName')}
+                  className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange placeholder:text-gray-700" />
+                {errors.depotName && <span className="text-[10px] text-red-400">{errors.depotName.message}</span>}
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">Company</label>
+                <input {...register('company')}
+                  className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange placeholder:text-gray-700" />
+                {errors.company && <span className="text-[10px] text-red-400">{errors.company.message}</span>}
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">Distance Unit</label>
+                <select {...register('distanceUnit')}
+                  className="bg-[#141414] border border-[#2a2a2a] text-gray-300 text-sm px-3 py-2 rounded-sm focus:outline-none focus:border-accent-orange cursor-pointer">
+                  <option value="Kilometers">Kilometers</option>
+                  <option value="Miles">Miles</option>
+                </select>
+              </div>
+
+              <button type="submit"
+                className={`w-full py-2.5 text-sm font-bold rounded-sm transition-colors ${
+                  savedGeneral ? 'bg-emerald-600 text-white' : 'bg-accent-orange hover:bg-orange-500 text-white'
+                }`}>
+                {savedGeneral ? '✓ Saved' : 'Save changes'}
+              </button>
+
+              {/* Status flow legend */}
+              <div className="flex flex-col gap-2 mt-1 text-[10px] text-gray-500">
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-400 font-semibold">Available</span>
+                  <span className="text-gray-700 flex-1 border-b border-dashed border-gray-700 mx-1" />
+                  <span className="text-amber-400 font-semibold">In Shop</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-400 font-semibold">In Shop</span>
+                  <span className="text-gray-700 flex-1 border-b border-dashed border-gray-700 mx-1" />
+                  <span className="text-emerald-400 font-semibold">Available</span>
+                </div>
+                <p className="text-gray-600 italic text-[9px]">Note: In Shop vehicles are removed from the dispatcher pool.</p>
+              </div>
+            </form>
+          )}
         </div>
 
-        {/* ── RIGHT: RBAC table ── */}
+        {/* ── RIGHT: RBAC table (live from backend) ── */}
         <div className="bg-[#1c1c1c] border border-[#2a2a2a] rounded-sm overflow-hidden">
           <div className="px-5 py-3 border-b border-[#2a2a2a]">
             <h2 className="text-xs font-bold text-white uppercase tracking-widest">Role-Based Access (RBAC)</h2>
@@ -155,6 +156,10 @@ export const SettingsPage = () => {
 
           {isLoading ? (
             <div className="p-8 text-center text-gray-600 animate-pulse text-xs">Loading roles…</div>
+          ) : error ? (
+            <div className="p-8 text-center text-red-500 text-xs">
+              Failed to load role data: {error?.message ?? 'Server error'}
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-[11px]">
@@ -170,7 +175,7 @@ export const SettingsPage = () => {
                   {roles.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-5 py-8 text-center text-gray-600">
-                        No roles found. Contact admin to seed role definitions.
+                        No roles found. Ask an admin to seed role definitions.
                       </td>
                     </tr>
                   ) : (
@@ -178,6 +183,9 @@ export const SettingsPage = () => {
                       <tr key={role._id} className="hover:bg-[#1f1f1f] transition-colors">
                         <td className="px-5 py-3 font-semibold text-gray-300">
                           {ROLE_DISPLAY[role.roleName] ?? role.roleName}
+                          {role.roleName === user?.role && (
+                            <span className="ml-2 px-1.5 py-0.5 text-[8px] bg-accent-orange/20 text-accent-orange rounded-sm font-bold">YOU</span>
+                          )}
                         </td>
                         {MODULES.map((mod) => (
                           <td key={mod} className="px-3 py-3 text-center">
@@ -192,6 +200,7 @@ export const SettingsPage = () => {
             </div>
           )}
 
+          {/* Admin-only notice */}
           {!isAdmin && (
             <div className="px-5 py-3 border-t border-[#2a2a2a] text-[10px] text-gray-600 italic">
               Only Administrators can modify role permissions.

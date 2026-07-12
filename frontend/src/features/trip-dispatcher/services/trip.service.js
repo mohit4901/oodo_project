@@ -1,8 +1,11 @@
 import api from '../../../lib/axios.js';
 
+const clean = (obj) =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== '' && v != null));
+
 export const tripApi = {
   getTrips: async (params = {}) => {
-    const response = await api.get('/trips', { params });
+    const response = await api.get('/trips', { params: clean(params) });
     return response.data;
   },
   getTripById: async (id) => {

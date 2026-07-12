@@ -6,6 +6,7 @@ export const useSettingsRoles = () => {
   return useQuery({
     queryKey: ['settingsRoles'],
     queryFn: () => settingsApi.getRoles(),
+    retry: false, // Don't spam retries on auth errors
   });
 };
 

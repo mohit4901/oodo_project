@@ -1,8 +1,12 @@
 import api from '../../../lib/axios.js';
 
+/** Strip keys whose value is falsy (empty string, null, undefined) */
+const clean = (obj) =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== '' && v != null));
+
 export const vehicleApi = {
   getVehicles: async (params = {}) => {
-    const response = await api.get('/vehicles', { params });
+    const response = await api.get('/vehicles', { params: clean(params) });
     return response.data;
   },
   getVehicleById: async (id) => {

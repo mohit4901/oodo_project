@@ -16,8 +16,7 @@ router.use(authenticate);
 
 router.get(
   '/roles',
-  authorize('admin', 'fleet_manager'),
-  getRoles
+  getRoles  // any authenticated user can read roles (write stays admin-only)
 );
 
 router.put(

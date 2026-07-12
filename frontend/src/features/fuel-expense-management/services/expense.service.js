@@ -1,12 +1,15 @@
 import api from '../../../lib/axios.js';
 
+const clean = (obj) =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== '' && v != null));
+
 export const expenseApi = {
   getFuelLogs: async (params = {}) => {
-    const response = await api.get('/expenses/fuel', { params });
+    const response = await api.get('/expenses/fuel', { params: clean(params) });
     return response.data;
   },
   getExpenses: async (params = {}) => {
-    const response = await api.get('/expenses', { params });
+    const response = await api.get('/expenses', { params: clean(params) });
     return response.data;
   },
   getVehicleTotalCost: async (vehicleId) => {
