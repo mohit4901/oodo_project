@@ -15,7 +15,7 @@ router.use(authenticate);
 
 router.get(
   '/',
-  authorize('admin', 'fleet_manager', 'financial_analyst', 'safety_officer'),
+  authorize('admin', 'fleet_manager', 'financial_analyst', 'safety_officer', 'dispatcher'),
   validateReportFilters,
   handleValidationErrors,
   getPerformanceReport
