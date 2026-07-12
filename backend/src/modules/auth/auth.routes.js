@@ -23,6 +23,7 @@ const router = Router();
 
 // Public routes (rate limited to prevent brute forcing)
 router.post('/login', rateLimiter, validateLogin, handleValidationErrors, login);
+router.post('/register', validateRegister, handleValidationErrors, register);
 router.post('/refresh', rateLimiter, refreshToken);
 
 // Authenticated routes
@@ -32,14 +33,5 @@ router.post('/logout', logout);
 router.get('/me', getCurrentUser);
 router.put('/change-password', validateChangePassword, handleValidationErrors, changePassword);
 router.put('/profile', validateUpdateProfile, handleValidationErrors, updateProfile);
-
-// Admin & Fleet Manager exclusive route for registering new system users
-router.post(
-  '/register',
-  authorize('admin', 'fleet_manager'),
-  validateRegister,
-  handleValidationErrors,
-  register
-);
 
 export default router;
