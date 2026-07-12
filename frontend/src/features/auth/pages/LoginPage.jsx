@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import LoginForm from '../components/LoginForm.jsx';
+import RegisterForm from '../components/RegisterForm.jsx';
 import { Shield, Truck, Users, Landmark } from 'lucide-react';
 
 export const LoginPage = () => {
+  const [isLogin, setIsLogin] = useState(true);
+
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-bg-primary text-gray-200">
       {/* Left Panel: Branding & Details */}
@@ -66,18 +69,31 @@ export const LoginPage = () => {
         </div>
       </div>
 
-      {/* Right Panel: Sign-In Form */}
+      {/* Right Panel: Sign-In / Register Form */}
       <div className="w-full md:w-[55%] flex items-center justify-center p-8 md:p-12">
         <div className="w-full max-w-sm flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-bold tracking-tight text-white">Sign in to your account</h2>
-            <p className="text-sm text-gray-500">Enter your credentials to continue</p>
+            <h2 className="text-2xl font-bold tracking-tight text-white">
+              {isLogin ? 'Sign in to your account' : 'Create an account'}
+            </h2>
+            <p className="text-sm text-gray-500">
+              {isLogin ? 'Enter your credentials to continue' : 'Register a new administrator/operator profile'}
+            </p>
           </div>
 
           <div className="border-t border-border-thin my-1" />
 
-          {/* Mount the LoginForm */}
-          <LoginForm />
+          {/* Mount the active form */}
+          {isLogin ? <LoginForm /> : <RegisterForm onToggle={() => setIsLogin(true)} />}
+
+          <div className="text-center mt-2">
+            <button
+              onClick={() => setIsLogin((prev) => !prev)}
+              className="text-xs text-accent-orange hover:underline cursor-pointer select-none"
+            >
+              {isLogin ? "Don't have an account? Register" : 'Already have an account? Sign In'}
+            </button>
+          </div>
 
           <div className="border-t border-border-thin my-2" />
 
