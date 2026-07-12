@@ -272,47 +272,5 @@ sequenceDiagram
 
 ---
 
-## 7. How to Run & Setup
-
-### 7.1 Backend Setup
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Install dependencies (run from local terminal to bypass sandbox constraints):
-   ```bash
-   npm install
-   ```
-3. Configure environment variables. Create a `.env` file based on `.env.example`:
-   ```env
-   PORT=5000
-   NODE_ENV=development
-   MONGODB_URI=mongodb://localhost:27017/transitops
-   JWT_ACCESS_SECRET=your_jwt_access_secret_102030
-   JWT_REFRESH_SECRET=your_jwt_refresh_secret_405060
-   COOKIE_SECRET=your_cookie_signing_secret
-   CORS_ORIGIN=http://localhost:5173
-   ```
-4. Start the server in development mode:
-   ```bash
-   npm run dev
-   ```
-
-### 7.2 Frontend Setup
-1. Navigate to the frontend directory:
-   ```bash
-   cd ../frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Create a `.env` file based on `.env.example`:
-   ```env
-   VITE_API_URL=http://localhost:5000/api/v1
-   VITE_APP_NAME=TransitOps
-   ```
-4. Start the Vite development server:
-   ```bash
-   npm run dev
+Made by Mohit Mudgil
    ```
